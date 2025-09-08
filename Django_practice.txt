@@ -1,0 +1,31 @@
+1. REST API - *need to search**
+2.  python3 -m django startproject <mysite>
+3.  go to setting and add 'api' and 'rest_framework' 
+
+Now make the data model we will interact with. 
+ORM - Object Relational Mapping - map a python object to a database object
+    - Create Retrieve Update Delete
+4.  go to <api> -> alter models to change the database models   
+    ORM -> maps a python object into a database instance 
+5.  Use serializer to change the instance that can be used by the api
+    - Specify a clss to make it JSON compatible file 
+    - 
+6. Views provided common Rest Framework
+    a. queryset -> to return the list of data objects 
+    b. serializer_class-> hcnages django model instaoces or querysets into native python data types (dictionary to xml or json for web api)
+
+7. URLS 
+    a. Url -> <mysite>
+    - Forward URLs to different apps
+    b. Url -> <api? 
+    - Views rendered on to the school - thats how we get there 
+    - Render what is in view ->> 
+8. Migrate 
+    - python3 .py managemigrations -> make files what migrations need to be applied
+    - python3 .py makemigration -> apply the migrations.
+    - SQL DB made 
+
+
+Questions.
+1. why use config
+

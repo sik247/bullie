@@ -1,0 +1,17 @@
+django>=5.0,<6.0
+djangorestframework>=3.14,<4.0
+environs>=10.0,<11.0
+
+# LangChain and LangGraph dependencies
+langchain>=0.1.0
+langchain-openai>=0.1.0
+langgraph>=0.1.0
+langchain-core>=0.1.0
+
+# MCP dependencies (already installed in venv)
+mcp>=1.0.0
+httpx>=0.25.0
+pydantic>=2.0.0
+
+# Additional utilities
+python-dotenv>=1.0.0
