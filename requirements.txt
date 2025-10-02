@@ -15,3 +15,11 @@ pydantic>=2.0.0
 
 # Additional utilities
 python-dotenv>=1.0.0
+
+# FastAPI with all standard dependencies
+fastapi[standard]>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# YFinance for stock data
+yfinance>=0.2.0
+langchain-community>=0.3.0

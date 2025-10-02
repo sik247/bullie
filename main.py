@@ -1,64 +1,79 @@
-import asyncio
-from dotenv import load_dotenv
-import os 
-
-
-from pydantic import BaseModel
-from langgraph_supervisor import create_supervisor
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
-from langchain_community.tools.yahoo_finance_news import YahooFinanceNewsTool
-from agents.stock_research_agent import build_stock_agent
-
-
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
-# Structured response schema
-class StockReport(BaseModel):
-    stock_price: float
-    date: str
-    sentiment: str
-    financial_statement: str
-    recommendations: str
-
-
-TRIAGE_PROMPT = """
-You are a triage financial analyst.
-
-## Workflow
-1. Call the stock research agent to get the latest stock info.
-2. Summarize the most recent stock price and date.
-3. Perform a sentiment analysis based on news & price action.
-4. Curate a key highlight from the financial statement.
-5. Provide a buy/hold/sell style recommendation.
-
-Respond strictly in the StockReport format.
 """
+Financial AI Supervisor - LangGraph Node Workflow
 
+Client Profile → Portfolio Constructor → Stock Research → Portfolio Refiner → END
+"""
+import asyncio
+from datetime import date
+from langgraph.graph import StateGraph, START, END
+
+# Import agent node functions
+from app.agents.client_profile_agent import client_profile_node
+from app.agents.stock_research_agent import stock_research_node
+from app.agents.portfolio_constructor_agent import portfolio_construct_node, portfolio_refine_node
+from app.models.client_profile import ClientProfile
+from typing import Annotated
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
+
+class WorkflowState(TypedDict):
+    """State schema for the LangGraph workflow"""
+    messages: Annotated[list[BaseMessage], add_messages]
+    client_profile: ClientProfile
 
 async def main():
-    # Build sub-agent (stock research agent with Yahoo Finance MCP tools)
-    research_agent = await build_stock_agent()
+    
+    # Create sample client data
+    client_profile = ClientProfile(
+        risk_tolerance=7,
+        investment_goals="aggressive growth for retirement",
+        cash_flow=100000,
+        start_date=date(2024, 1, 1),
+        end_date=date(2034, 1, 1)
+    )
+    
+    # Create StateGraph with WorkflowState as state
+    workflow = StateGraph(WorkflowState)
+    
+    # Add nodes using your node functions
+    workflow.add_node("client_profile_agent", client_profile_node)
+    workflow.add_node("portfolio_constructor_agent", portfolio_construct_node)
+    workflow.add_node("stock_research_agent", stock_research_node)
+    workflow.add_node("portfolio_refine_agent", portfolio_refine_node)
+    
+    # Add edges
+    workflow.add_edge(START, "client_profile_agent")
 
-    # Build supervisor agent
-    supervisor = create_supervisor(
-        agents=[research_agent],
-        tools = [YahooFinanceNewsTool()],   # name your sub-agent
-        model=ChatOpenAI(model="gpt-4.1"),
-        prompt=TRIAGE_PROMPT,
-        response_format=StockReport,
-        output_mode = "last_message"
-    ).compile()
 
-    user_input = HumanMessage(content="Generate a full stock report for AAPL")
-
-    # Run supervisor
-    result = await supervisor.ainvoke({"messages": [user_input]})
-
-    print("\n=== Structured Stock Report ===")
-    print(result)
-
+    # Compile
+    app = workflow.compile()
+    
+    print("🔄 Running LangGraph node workflow...")
+    
+    # Create initial workflow state
+    initial_state = {
+        "client_profile": client_profile,
+        "messages": []
+    }
+    
+    # Run workflow with WorkflowState as initial state
+    result = await app.ainvoke(initial_state)
+    
+    # Extract just the final portfolio from the last message
+    final_message = result['messages'][-1]  # Last message from portfolio_refine_agent
+    portfolio_content = final_message.content
+    
+    print("📊 FINAL PORTFOLIO RECOMMENDATION")
+    
+    # Try to parse and pretty print as JSON
+    import json
+    try:
+        portfolio_json = json.loads(portfolio_content)
+        print(json.dumps(portfolio_json, indent=2))
+    except json.JSONDecodeError:
+        # If it's not valid JSON, just print as is
+        print(portfolio_content)
 
 if __name__ == "__main__":
     asyncio.run(main())

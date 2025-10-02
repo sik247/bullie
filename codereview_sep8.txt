@@ -1,0 +1,5 @@
+1. 503 Error 
+ - Output이 생생되다과 503 발생 
+ - 서버쪽 애러지만 이럴때 fallback으로 tool 적용 법
+ 2. FastAPI 연동***
+    - Documentations을 보면서 API 연동 해보고싶습니다. 
